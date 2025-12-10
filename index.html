@@ -12,7 +12,7 @@
     <style>
         body {
             font-family: 'Noto Sans', 'Noto Sans JP', sans-serif;
-            background-color: #FFF8DC; /* Cornsilk - Paper feel */
+            background-color: #FFF8DC; /* Cornsilk */
             overflow-x: hidden;
         }
         .leaf {
@@ -26,11 +26,6 @@
             0% { transform: translate(0, 0) rotate(0deg); }
             100% { transform: translate(100px, 110vh) rotate(360deg); }
         }
-        /* Hide scrollbar for cleaner look */
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
     </style>
 </head>
 <body>
@@ -40,11 +35,14 @@
         const { useState } = React;
 
         // --- Data ---
+        // 구글맵 링크는 실제 장소의 공유 링크(URL)를 사용합니다.
         const stages = [
             {
-                id: 1,
-                location: "Kofukuji (Central Golden Hall)",
-                locationJp: "興福寺・中金堂",
+                id: 'start',
+                type: 'start',
+                location: "Kofukuji (Start)",
+                locationJp: "興福寺 (出発)",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Kofukuji+Nara", 
                 missionTitle: "Red Power Pose",
                 missionJp: "朱色の中金堂を背景に、チーム全員で「一番自信のあるポーズ」を決めて集合写真を撮ってください！",
                 missionEn: "Take a group photo with the red \"Central Golden Hall\" in the background. Everyone must strike their \"Most Confident Pose\"!",
@@ -52,9 +50,11 @@
                 guideEn: "Kofukuji was the family temple of the powerful Fujiwara clan. The Five-Story Pagoda is under repair, but has a history of resilience."
             },
             {
-                id: 2,
+                id: 'park',
+                type: 'spot',
                 location: "Nara Park",
                 locationJp: "奈良公園",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Nara+Park", 
                 missionTitle: "Polite Deer",
                 missionJp: "鹿にお辞儀をした時、ペコっとお辞儀を返してくれる「礼儀正しい鹿」を探して動画に撮ってください。",
                 missionEn: "Find a polite deer that bows back to you when you bow to it. Record it on video!",
@@ -62,9 +62,11 @@
                 guideEn: "Deer in Nara are considered messengers of gods. Bowing is how they beg for food, but it looks very polite!"
             },
             {
-                id: 3,
+                id: 'gate',
+                type: 'spot',
                 location: "Todaiji (Nandaimon)",
                 locationJp: "東大寺・南大門",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Todaiji+Nandaimon",
                 missionTitle: "Face Mimic 'Nio'",
                 missionJp: "南大門の金剛力士像の表情と手の動きを、シンクロ率100%で真似して撮ってください。",
                 missionEn: "At the Great South Gate, take a photo mimicking the facial expression and hand gestures of the Nio Guardian Statue perfectly!",
@@ -72,9 +74,11 @@
                 guideEn: "Massive guardians by Unkei & Kaikei. The open mouth ('A') and closed mouth ('Un') represent the universe's beginning and end."
             },
             {
-                id: 4,
+                id: 'buddha',
+                type: 'spot',
                 location: "Todaiji (Great Buddha)",
                 locationJp: "東大寺・大仏殿",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Todaiji+Daibutsuden",
                 missionTitle: "Buddha's Palm Quiz",
                 missionJp: "大仏殿の案内板を見て答えを探してください。Q:「大仏様の中指の長さは、約何メートル？」",
                 missionEn: "Find the answer inside. Q: \"How many meters long is the Great Buddha's middle finger?\"",
@@ -82,9 +86,11 @@
                 guideEn: "One of the world's largest wooden buildings. The head was repaired in the Edo period, so its color is slightly different."
             },
             {
-                id: 5,
+                id: 'nigatsudo',
+                type: 'spot',
                 location: "Nigatsudo",
                 locationJp: "二月堂",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Nigatsudo",
                 missionTitle: "The Back of Youth",
                 missionJp: "奈良市内が見渡せる舞台で、「チーム全員の後ろ姿」を撮ってください。手や腕を使って一つの形を作ること！",
                 missionEn: "Take a photo of \"everyone's back\" on the balcony. You must use your hands/arms to make a shape together!",
@@ -92,9 +98,11 @@
                 guideEn: "Famous for the 'Omizutori' festival. The sunset view from this balcony is breathtaking."
             },
             {
-                id: 6,
-                location: "Sarusawa Pond",
-                locationJp: "猿沢池 (Goal)",
+                id: 'goal',
+                type: 'goal',
+                location: "Sarusawa Pond (Goal)",
+                locationJp: "猿沢池 (ゴール)",
+                mapUrl: "https://www.google.com/maps/search/?api=1&query=Sarusawa+Pond",
                 missionTitle: "Finish Line Jump",
                 missionJp: "池を背景に、喜びの「完走ジャンプ写真」を撮ってください。（疲れたチームは亀の写真でもOK）",
                 missionEn: "Take a \"Group Jump Shot\" with the pond in the background! (Tired teams can take a photo of a turtle instead.)",
@@ -104,7 +112,7 @@
         ];
 
         const BonusMission = {
-            title: "BONUS STAGE",
+            title: "BONUS MISSION",
             missionTitle: "Global Team",
             missionJp: "奈良公園内で4ヶ国語（日・英・韓・中）が書かれた看板を探し、みんなで指差して撮影してください。",
             missionEn: "Find a signboard written in 4 languages (JP/EN/KR/CN). Take a photo pointing at it together."
@@ -127,39 +135,50 @@
             return <>{leaves}</>;
         }
 
-        function AccordionCard({ stage }) {
+        function AccordionCard({ stage, icon, colorClass, borderColorClass }) {
             const [isOpen, setIsOpen] = useState(false);
 
             return (
-                <div className="bg-white rounded-xl shadow-md mb-4 overflow-hidden border border-[#D2691E] bg-opacity-95">
-                    {/* Header - Always Visible & Clickable */}
+                <div className={`bg-white rounded-xl shadow-md mb-4 overflow-hidden border-l-8 ${borderColorClass} bg-opacity-95`}>
+                    {/* Header */}
                     <button 
                         onClick={() => setIsOpen(!isOpen)}
-                        className="w-full text-left p-4 flex justify-between items-center bg-gradient-to-r from-white to-orange-50 hover:bg-orange-100 transition-colors"
+                        className="w-full text-left p-4 flex justify-between items-center hover:bg-gray-50 transition-colors relative"
                     >
-                        <div className="flex items-center gap-3">
-                            <div className="flex flex-col items-center justify-center w-12 h-12 bg-[#8B0000] text-white rounded-lg shadow-sm">
-                                <span className="text-[10px] font-bold uppercase">Stage</span>
-                                <span className="text-xl font-bold leading-none">{stage.id}</span>
+                        <div className="flex items-center gap-3 w-full pr-8">
+                            <div className={`flex-shrink-0 flex items-center justify-center w-10 h-10 ${colorClass} text-white rounded-full shadow-sm text-xl`}>
+                                {icon}
                             </div>
-                            <div>
+                            <div className="flex-grow">
                                 <h3 className="font-bold text-gray-800 text-lg leading-tight">{stage.location}</h3>
                                 <p className="text-xs text-gray-500 font-medium">{stage.locationJp}</p>
                             </div>
                         </div>
-                        <div className={`transform transition-transform duration-300 text-[#D2691E] ${isOpen ? 'rotate-180' : ''}`}>
+                        <div className={`transform transition-transform duration-300 text-gray-400 absolute right-4 top-1/2 -translate-y-1/2 ${isOpen ? 'rotate-180' : ''}`}>
                             ▼
                         </div>
                     </button>
 
-                    {/* Content - Collapsible */}
-                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="p-4 border-t border-orange-100 bg-white">
+                    {/* Content */}
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className="p-4 border-t border-gray-100 bg-white">
                             
-                            {/* Mission Section */}
+                            {/* UPDATED: Map Link Card Style */}
+                            <a href={stage.mapUrl} target="_blank" rel="noopener noreferrer" className="block w-full mb-4 group">
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-3 hover:bg-blue-100 transition shadow-sm">
+                                    <div className="bg-white p-2 rounded-full text-xl shadow-sm group-hover:scale-110 transition-transform">🗺️</div>
+                                    <div className="text-left flex-grow">
+                                        <div className="text-blue-800 font-bold text-sm">Open in Google Maps</div>
+                                        <div className="text-blue-500 text-xs">現在地からのルートを見る (Navigation)</div>
+                                    </div>
+                                    <div className="text-blue-400 font-bold text-lg">➤</div>
+                                </div>
+                            </a>
+
+                            {/* Mission */}
                             <div className="mb-4">
                                 <h4 className="text-sm font-black text-[#D2691E] uppercase tracking-wide mb-2 flex items-center gap-2">
-                                    <span>🎯</span> Mission: {stage.missionTitle}
+                                    <span>📸</span> Mission: {stage.missionTitle}
                                 </h4>
                                 <div className="space-y-2 text-sm">
                                     <div className="bg-red-50 p-3 rounded-md border-l-4 border-red-400">
@@ -171,10 +190,10 @@
                                 </div>
                             </div>
 
-                            {/* Guide Section */}
+                            {/* Guide */}
                             <div className="bg-[#FFFDE7] p-3 rounded-lg border border-yellow-200">
                                 <h5 className="text-xs font-bold text-yellow-700 mb-1 flex items-center gap-1">
-                                    <span>💡</span> Did You Know? / 豆知識
+                                    <span>💡</span> Did You Know?
                                 </h5>
                                 <p className="text-xs text-gray-700 mb-1"><strong className="text-gray-900">[JP]</strong> {stage.guideJp}</p>
                                 <p className="text-xs text-gray-700"><strong className="text-gray-900">[EN]</strong> {stage.guideEn}</p>
@@ -186,38 +205,14 @@
             );
         }
 
-        function BonusCard({ bonus }) {
-            const [isOpen, setIsOpen] = useState(false);
-
-            return (
-                <div className="bg-gradient-to-br from-[#FFD700] to-[#FFA500] rounded-xl shadow-lg mb-8 overflow-hidden border-2 border-white">
-                    <button 
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="w-full p-4 flex justify-between items-center text-white"
-                    >
-                        <div className="flex items-center gap-3">
-                            <span className="text-2xl">🌟</span>
-                            <div className="text-left">
-                                <h3 className="font-black text-lg shadow-black drop-shadow-md">{bonus.title}</h3>
-                                <p className="text-xs font-medium opacity-90">{bonus.missionTitle}</p>
-                            </div>
-                        </div>
-                        <div className={`transform transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▼</div>
-                    </button>
-
-                    <div className={`transition-all duration-300 ease-in-out overflow-hidden bg-white ${isOpen ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                        <div className="p-4 text-sm">
-                            <p className="mb-2 text-gray-800"><strong>[JP]</strong> {bonus.missionJp}</p>
-                            <p className="text-gray-800"><strong>[EN]</strong> {bonus.missionEn}</p>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
         function App() {
+            // Grouping logic
+            const startStage = stages.find(s => s.type === 'start');
+            const spotStages = stages.filter(s => s.type === 'spot');
+            const goalStage = stages.find(s => s.type === 'goal');
+
             return (
-                <div className="min-h-screen pb-10 relative">
+                <div className="min-h-screen pb-20 relative">
                     <AutumnLeaves />
                     
                     {/* Header */}
@@ -228,39 +223,111 @@
                             <p className="text-[#DAA520] font-bold text-sm">BBP International Walking Rally Guide</p>
                             <p className="text-xs opacity-75 mt-1">2025.12.14 | Kyoto → Nara</p>
                         </div>
-                        {/* Decorative circle */}
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#DAA520] rounded-full opacity-20"></div>
-                        <div className="absolute top-10 left-[-20px] w-20 h-20 bg-[#DAA520] rounded-full opacity-10"></div>
                     </header>
 
                     <div className="max-w-md mx-auto px-4">
                         
-                        {/* Welcome/Rules */}
-                        <div className="mb-6 bg-white bg-opacity-80 p-4 rounded-lg shadow-sm border border-gray-100 backdrop-blur-sm">
-                            <h3 className="font-bold text-[#8B0000] mb-2 border-b border-gray-200 pb-1">📜 GROUND RULES</h3>
+                        {/* 1. Rules Card */}
+                        <div className="mb-4 bg-white bg-opacity-90 p-4 rounded-xl shadow-sm border border-gray-200">
+                            <h3 className="font-bold text-[#8B0000] mb-2 flex items-center gap-2 border-b pb-2">
+                                <span>📜</span> GAME RULES
+                            </h3>
                             <ul className="text-sm text-gray-700 space-y-1 list-disc pl-4">
-                                <li><strong>Teamwork:</strong> All members in the photo!</li>
-                                <li><strong>Safety:</strong> Be gentle with deer.</li>
-                                <li><strong>Time:</strong> Goal by 15:30 at Sarusawa Pond.</li>
+                                <li><strong>Start & Goal</strong> are fixed.</li>
+                                <li><strong>Adventure Spots:</strong> Visit in <span className="text-red-600 font-bold bg-red-100 px-1 rounded">ANY ORDER!</span></li>
+                                <li><strong>Time Limit:</strong> Arrive at Goal by <span className="font-bold text-red-600">15:30</span>.</li>
                             </ul>
                         </div>
 
-                        {/* Stages List */}
-                        <div className="space-y-2">
-                            {stages.map(stage => (
-                                <AccordionCard key={stage.id} stage={stage} />
+                        {/* 2. Safety & Etiquette Card (New Separate Section) */}
+                        <div className="mb-8 bg-red-50 p-4 rounded-xl shadow-sm border border-red-200">
+                            <h3 className="font-bold text-red-600 mb-2 flex items-center gap-2 border-b border-red-200 pb-2">
+                                <span>⚠️</span> SAFETY & ETIQUETTE
+                            </h3>
+                            <ul className="text-sm text-gray-700 space-y-2">
+                                <li className="flex gap-2 items-start">
+                                    <span className="text-lg">🦌</span>
+                                    <span>
+                                        <strong>Deer Safety:</strong><br/>
+                                        Deer eat paper! Hide your maps & money.<br/>
+                                        <span className="text-xs text-gray-500">紙類（地図やお札）は鹿に食べられます。隠してください！</span>
+                                    </span>
+                                </li>
+                                <li className="flex gap-2 items-start">
+                                    <span className="text-lg">🛑</span>
+                                    <span>
+                                        <strong>No Teasing:</strong><br/>
+                                        Give crackers quickly. If empty, show hands (🙌).
+                                    </span>
+                                </li>
+                                <li className="flex gap-2 items-start">
+                                    <span className="text-lg">🗑️</span>
+                                    <span>
+                                        <strong>Trash:</strong> Please take all trash with you.<br/>
+                                        <span className="text-xs text-gray-500">ゴミは各自持ち帰りましょう。</span>
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {/* 3. START Section */}
+                        <div className="mb-2 pl-2 border-l-4 border-red-800">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Start Point (12:30)</h2>
+                        </div>
+                        <AccordionCard 
+                            stage={startStage} 
+                            icon="🚩" 
+                            colorClass="bg-red-600" 
+                            borderColorClass="border-red-600" 
+                        />
+
+                        {/* 4. ADVENTURE Section */}
+                        <div className="mt-8 mb-2 pl-2 border-l-4 border-orange-500 flex justify-between items-center">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Adventure Zone</h2>
+                            <span className="text-[10px] bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-bold">FREE ORDER</span>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            {spotStages.map(stage => (
+                                <AccordionCard 
+                                    key={stage.id} 
+                                    stage={stage} 
+                                    icon="📍" 
+                                    colorClass="bg-orange-500" 
+                                    borderColorClass="border-orange-500" 
+                                />
                             ))}
                         </div>
 
+                        {/* 5. GOAL Section */}
+                        <div className="mt-8 mb-2 pl-2 border-l-4 border-green-600">
+                            <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest">Goal (15:30)</h2>
+                        </div>
+                        <AccordionCard 
+                            stage={goalStage} 
+                            icon="🏁" 
+                            colorClass="bg-green-600" 
+                            borderColorClass="border-green-600" 
+                        />
+
                         {/* Bonus */}
-                        <div className="mt-6">
-                            <BonusCard bonus={BonusMission} />
+                        <div className="mt-8">
+                            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 p-4 rounded-xl shadow-lg text-white border-2 border-white">
+                                <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
+                                    <span>🌟</span> {BonusMission.title}
+                                </h3>
+                                <p className="text-sm font-medium mb-3 opacity-90">{BonusMission.missionTitle}</p>
+                                <div className="bg-white bg-opacity-20 p-3 rounded-lg text-sm backdrop-blur-sm">
+                                    <p className="mb-1">{BonusMission.missionJp}</p>
+                                    <p className="opacity-80 text-xs">{BonusMission.missionEn}</p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="text-center text-gray-500 text-xs py-6">
-                            <p>Enjoy your trip to Nara!</p>
-                            <p className="mt-1 font-bold text-[#8B0000] opacity-50">BBP 2025</p>
+                        <div className="text-center text-gray-400 text-xs py-10">
+                            <p>Safety First & Have Fun!</p>
+                            <p>BBP 2025 Winter</p>
                         </div>
                     </div>
                 </div>
